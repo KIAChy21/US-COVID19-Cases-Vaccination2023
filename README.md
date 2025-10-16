@@ -192,8 +192,8 @@ You are free to use, modify, and share with proper credit.
 
 ## Acknowledgments
 
-* *Instructor:* jfobrycki
-* *Author:* Kamal I A Chowdhury
+* *Instructor:* John Obrycki [jfobrycki]
+* *Author:* Kamal Ibne Amin Chowdhury [KIAChy21]
 * *Software:* QGIS
 * *Data:* NY Times, CDC, U.S. Census Bureau
 * *Tools:* qgis2web, GitHub Pages
@@ -202,7 +202,7 @@ You are free to use, modify, and share with proper credit.
 
 ## Contact
 
-For questions or collaboration, contact: [your.email@example.com](mailto:your.email@example.com)
+For questions or collaboration, contact: (mailto: kch365@uky.edu)
 
 ---
 

@@ -146,8 +146,7 @@ final_webmap/
 You’ll get a live URL:
 
 
-[https://your-username.github.io/us-covid-vaccination-map](https://github.com/KIAChy21/COVID19-USA-2023-Vaccination-Analysis)
-
+https://github.com/KIAChy21/US-COVID19-Cases-Vaccination2023/
 
 
 ### Step 4 — Add Collaborator

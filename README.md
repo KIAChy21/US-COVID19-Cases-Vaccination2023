@@ -202,7 +202,7 @@ You are free to use, modify, and share with proper credit.
 
 ## Contact
 
-For questions or collaboration, contact: (mailto: kch365@uky.edu)
+For questions or collaboration, contact: mail to: kch365@uky.edu
 
 ---
 

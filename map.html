@@ -1,0 +1,865 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <link rel="stylesheet" href="css/leaflet.css">
+        <link rel="stylesheet" href="css/L.Control.Layers.Tree.css">
+        <link rel="stylesheet" href="css/qgis2web.css">
+        <link rel="stylesheet" href="css/fontawesome-all.min.css">
+        <link rel="stylesheet" href="css/leaflet.photon.css">
+        <style>
+        html, body {
+            background-color: #ffffff;
+        }
+        html, body, #map {
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+        }
+        
+        /* Custom Layer Control Styles */
+        .layer-control {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+            z-index: 1000;
+            max-width: 280px;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+        }
+        
+        .layer-control-title {
+            font-weight: bold;
+            margin-bottom: 12px;
+            text-align: center;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 8px;
+            font-size: 16px;
+        }
+        
+        .layer-item {
+            margin-bottom: 12px;
+        }
+        
+        .layer-header {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            padding: 5px 0;
+        }
+        
+        .layer-checkbox {
+            margin-right: 10px;
+            transform: scale(1.2);
+        }
+        
+        .layer-label {
+            font-weight: bold;
+            flex-grow: 1;
+            font-size: 14px;
+        }
+        
+        .legend-section {
+            margin-top: 8px;
+            margin-left: 25px;
+            border-left: 2px solid #eee;
+            padding-left: 10px;
+        }
+        
+        .legend-item {
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 15px;
+            margin-right: 8px;
+            border: 1px solid #666;
+            display: inline-block;
+        }
+        
+        .legend-label {
+            font-size: 12px;
+            line-height: 1.3;
+        }
+
+        /* Metadata Box Styles */
+        .map-metadata {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(255, 255, 255, 0.92);
+            padding: 8px;
+            border-radius: 4px;
+            border-left: 3px solid #3498db;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            max-width: 220px;
+            font-size: 10px;
+            line-height: 1.2;
+            z-index: 1000;
+            font-family: Arial, sans-serif;
+        }
+
+        .map-metadata h4 {
+            margin: 0 0 4px 0;
+            color: #2c3e50;
+            font-size: 11px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 3px;
+        }
+
+        .map-metadata .info-item {
+            margin-bottom: 2px;
+        }
+
+        .map-metadata .data-sources {
+            margin-top: 5px;
+            padding-top: 5px;
+            border-top: 1px dashed #ddd;
+        }
+
+        .map-metadata .data-sources ul {
+            margin: 3px 0;
+            padding-left: 12px;
+        }
+
+        .map-metadata .data-sources li {
+            margin-bottom: 1px;
+        }
+        </style>
+        <title>COVID-19 Vulnerability Map</title>
+    </head>
+    <body>
+        <div id="map">
+            <!-- Custom Layer Control -->
+            <div class="layer-control">
+                <div class="layer-control-title">Map Layers</div>
+                
+                <!-- Poverty Rate Layer -->
+                <div class="layer-item">
+                    <div class="layer-header">
+                        <input type="checkbox" class="layer-checkbox" id="checkbox-poverty" checked>
+                        <label class="layer-label" for="checkbox-poverty">Poverty Rate (%)</label>
+                    </div>
+                    <div class="legend-section">
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: rgba(250,250,250,1.0)"></div>
+                            <div class="legend-label">0.0 - 9.3%</div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: rgba(189,189,189,1.0)"></div>
+                            <div class="legend-label">9.3 - 12.0%</div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: rgba(128,128,128,1.0)"></div>
+                            <div class="legend-label">12.0 - 14.8%</div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: rgba(66,66,66,1.0)"></div>
+                            <div class="legend-label">14.8 - 19.0%</div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: rgba(5,5,5,1.0)"></div>
+                            <div class="legend-label">19.0 - 64.7%</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Vaccination Rate Layer -->
+                <div class="layer-item">
+                    <div class="layer-header">
+                        <input type="checkbox" class="layer-checkbox" id="checkbox-vaccination">
+                        <label class="layer-label" for="checkbox-vaccination">Vaccination Rate (%)</label>
+                    </div>
+                    <div class="legend-section">
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: rgba(247,251,255,1.0)"></div>
+                            <div class="legend-label">0.0 - 37.4%</div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: rgba(200,220,240,1.0)"></div>
+                            <div class="legend-label">37.4 - 44.0%</div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: rgba(115,178,216,1.0)"></div>
+                            <div class="legend-label">44.0 - 50.2%</div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: rgba(41,121,185,1.0)"></div>
+                            <div class="legend-label">50.2 - 57.8%</div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: rgba(8,48,107,1.0)"></div>
+                            <div class="legend-label">57.8 - 95.0%</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Cases per 1000 Layer -->
+                <div class="layer-item">
+                    <div class="layer-header">
+                        <input type="checkbox" class="layer-checkbox" id="checkbox-cases">
+                        <label class="layer-label" for="checkbox-cases">Cases per 1000</label>
+                    </div>
+                    <div class="legend-section">
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: rgba(241,246,84,1.0)"></div>
+                            <div class="legend-label">0 - 311</div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: rgba(243,186,70,1.0)"></div>
+                            <div class="legend-label">311 - 359</div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: rgba(245,126,55,1.0)"></div>
+                            <div class="legend-label">359 - 396</div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: rgba(247,67,41,1.0)"></div>
+                            <div class="legend-label">396 - 445</div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: rgba(249,7,27,1.0)"></div>
+                            <div class="legend-label">445 - 7593</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Metadata Box -->
+            <div class="map-metadata">
+                <h4>🗺 Map Metadata</h4>
+                <div class="info-item"><strong>Author:</strong> Kamal I A Chowdhury</div>
+                <div class="info-item"><strong>Projection:</strong> WGS84 (EPSG:4326)</div>
+                <div class="info-item"><strong>Software:</strong> QGIS</div>
+                <div class="info-item"><strong>Date:</strong> October 2025</div>
+                
+                <div class="data-sources">
+                    <strong>Data Sources:</strong>
+                    <ul>
+                        <li>CDC COVID-19 Vaccination Data (2023)</li>
+                        <li>NY Times COVID-19 Case Data Repository</li>
+                        <li>U.S. Census Bureau American Community Survey (ACS) 5 Year Estimates</li>
+                        <li>U.S. Census TIGER/Line Shapefiles</li>
+                        <li>Peer-reviewed literature on COVID-19 vaccination, case rates, and social determinants of health</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <script src="js/qgis2web_expressions.js"></script>
+        <script src="js/leaflet.js"></script>
+        <script src="js/L.Control.Layers.Tree.min.js"></script>
+        <script src="js/leaflet.rotatedMarker.js"></script>
+        <script src="js/leaflet.pattern.js"></script>
+        <script src="js/leaflet-hash.js"></script>
+        <script src="js/Autolinker.min.js"></script>
+        <script src="js/rbush.min.js"></script>
+        <script src="js/labelgun.min.js"></script>
+        <script src="js/labels.js"></script>
+        <script src="js/leaflet.photon.js"></script>
+        <script src="data/PovertySimplifiedtestv2_0.js"></script>
+        <script src="data/VaccinationSimplifiedTestv2_1.js"></script>
+        <script src="data/FinalCaseSimplifiedtestv2_2.js"></script>
+        <script>
+        // Debug data loading
+        console.log("=== CHECKING DATA LOADING ===");
+        console.log("Poverty data:", typeof json_PovertySimplifiedtestv2_0);
+        console.log("Vaccination data:", typeof json_VaccinationSimplifiedTestv2_1);
+        console.log("Cases data:", typeof json_FinalCaseSimplifiedtestv2_2);
+
+        var map = L.map('map', {
+            zoomControl:false, maxZoom:28, minZoom:1
+        }).fitBounds([[-2.592239639225788,-203.50909460096662],[101.00357599821305,-40.65613904541115]]);
+        
+        // Add base maps
+        var osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+        
+        var hash = new L.Hash(map);
+        map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
+        var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
+        
+        // remove popup's row if "visible-with-data"
+        function removeEmptyRowsFromPopupContent(content, feature) {
+         var tempDiv = document.createElement('div');
+         tempDiv.innerHTML = content;
+         var rows = tempDiv.querySelectorAll('tr');
+         for (var i = 0; i < rows.length; i++) {
+             var td = rows[i].querySelector('td.visible-with-data');
+             var key = td ? td.id : '';
+             if (td && td.classList.contains('visible-with-data') && feature.properties[key] == null) {
+                 rows[i].parentNode.removeChild(rows[i]);
+             }
+         }
+         return tempDiv.innerHTML;
+        }
+        
+        // modify popup if contains media
+        function addClassToPopupIfMedia(content, popup) {
+            var tempDiv = document.createElement('div');
+            tempDiv.innerHTML = content;
+            var imgTd = tempDiv.querySelector('td img');
+            if (imgTd) {
+                var src = imgTd.getAttribute('src');
+                if (/\.(jpg|jpeg|png|gif|bmp|webp|avif)$/i.test(src)) {
+                    popup._contentNode.classList.add('media');
+                    setTimeout(function() {
+                        popup.update();
+                    }, 10);
+                } else if (/\.(mp3|wav|ogg|aac)$/i.test(src)) {
+                    var audio = document.createElement('audio');
+                    audio.controls = true;
+                    audio.src = src;
+                    imgTd.parentNode.replaceChild(audio, imgTd);
+                    popup._contentNode.classList.add('media');
+                    setTimeout(function() {
+                        popup.setContent(tempDiv.innerHTML);
+                        popup.update();
+                    }, 10);
+                } else if (/\.(mp4|webm|ogg|mov)$/i.test(src)) {
+                    var video = document.createElement('video');
+                    video.controls = true;
+                    video.src = src;
+                    video.style.width = "400px";
+                    video.style.height = "300px";
+                    video.style.maxHeight = "60vh";
+                    video.style.maxWidth = "60vw";
+                    imgTd.parentNode.replaceChild(video, imgTd);
+                    popup._contentNode.classList.add('media');
+                    video.addEventListener('loadedmetadata', function() {
+                        popup.update();
+                    });
+                    setTimeout(function() {
+                        popup.setContent(tempDiv.innerHTML);
+                        popup.update();
+                    }, 10);
+                } else {
+                    popup._contentNode.classList.remove('media');
+                }
+            } else {
+                popup._contentNode.classList.remove('media');
+            }
+        }
+        
+        var zoomControl = L.control.zoom({
+            position: 'topleft'
+        }).addTo(map);
+        
+        var bounds_group = new L.featureGroup([]);
+        
+        function setBounds() {
+        }
+
+        // Helper function to create popup content based on layer type
+        function createPopupContent(feature, layerType) {
+            var popupContent = '';
+            
+            switch(layerType) {
+                case 'poverty':
+                    popupContent = '<table style="font-family: Arial, sans-serif; font-size: 14px; min-width: 250px;">\
+                            <tr>\
+                                <td colspan="2" style="text-align: center; padding: 8px; background: #2c3e50; color: white; font-weight: bold; border-radius: 5px 5px 0 0;">\
+                                    ' + (feature.properties['NAME'] !== null ? autolinker.link(String(feature.properties['NAME']).replace(/'/g, '\'').toLocaleString()) : 'No Name') + '\
+                                </td>\
+                            </tr>\
+                            <tr>\
+                                <td style="padding: 6px 8px; border-bottom: 1px solid #eee;"><strong>Poverty Rate:</strong></td>\
+                                <td style="padding: 6px 8px; border-bottom: 1px solid #eee; text-align: right;">' + (feature.properties['mapping_data_final_poverty_rate'] !== null ? autolinker.link(String(feature.properties['mapping_data_final_poverty_rate']).replace(/'/g, '\'').toLocaleString()) + '%' : 'N/A') + '</td>\
+                            </tr>\
+                        </table>';
+                    break;
+                    
+                case 'vaccination':
+                    popupContent = '<table style="font-family: Arial, sans-serif; font-size: 14px; min-width: 250px;">\
+                            <tr>\
+                                <td colspan="2" style="text-align: center; padding: 8px; background: #2c3e50; color: white; font-weight: bold; border-radius: 5px 5px 0 0;">\
+                                    ' + (feature.properties['NAME'] !== null ? autolinker.link(String(feature.properties['NAME']).replace(/'/g, '\'').toLocaleString()) : 'No Name') + '\
+                                </td>\
+                            </tr>\
+                            <tr>\
+                                <td style="padding: 6px 8px; border-bottom: 1px solid #eee;"><strong>Vaccination Rate:</strong></td>\
+                                <td style="padding: 6px 8px; border-bottom: 1px solid #eee; text-align: right;">' + (feature.properties['mapping_data_final_vaccinated_pct'] !== null ? autolinker.link(String(feature.properties['mapping_data_final_vaccinated_pct']).replace(/'/g, '\'').toLocaleString()) + '%' : 'N/A') + '</td>\
+                            </tr>\
+                        </table>';
+                    break;
+                    
+                case 'cases':
+                    popupContent = '<table style="font-family: Arial, sans-serif; font-size: 14px; min-width: 250px;">\
+                            <tr>\
+                                <td colspan="2" style="text-align: center; padding: 8px; background: #2c3e50; color: white; font-weight: bold; border-radius: 5px 5px 0 0;">\
+                                    ' + (feature.properties['NAME'] !== null ? autolinker.link(String(feature.properties['NAME']).replace(/'/g, '\'').toLocaleString()) : 'No Name') + '\
+                                </td>\
+                            </tr>\
+                            <tr>\
+                                <td style="padding: 6px 8px; border-bottom: 1px solid #eee;"><strong>Cases per 1000:</strong></td>\
+                                <td style="padding: 6px 8px; border-bottom: 1px solid #eee; text-align: right;">' + (feature.properties['mapping_data_final_case_rate_per1k'] !== null ? autolinker.link(String(feature.properties['mapping_data_final_case_rate_per1k']).replace(/'/g, '\'').toLocaleString()) : 'N/A') + '</td>\
+                            </tr>\
+                        </table>';
+                    break;
+            }
+            
+            return popupContent;
+        }
+
+        // Poverty Rate Layer - SIMPLIFIED POPUP
+        function pop_PovertySimplifiedtestv2_0(feature, layer) {
+            var popupContent = createPopupContent(feature, 'poverty');
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+            layer.on('popupopen', function(e) {
+                addClassToPopupIfMedia(content, e.popup);
+            });
+            layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_PovertySimplifiedtestv2_0_0(feature) {
+            if (feature.properties['mapping_data_final_poverty_rate'] >= 0.000000 && feature.properties['mapping_data_final_poverty_rate'] <= 9.280000 ) {
+                return {
+                pane: 'pane_PovertySimplifiedtestv2_0',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(250,250,250,1.0)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['mapping_data_final_poverty_rate'] >= 9.280000 && feature.properties['mapping_data_final_poverty_rate'] <= 12.000000 ) {
+                return {
+                pane: 'pane_PovertySimplifiedtestv2_0',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(189,189,189,1.0)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['mapping_data_final_poverty_rate'] >= 12.000000 && feature.properties['mapping_data_final_poverty_rate'] <= 14.800000 ) {
+                return {
+                pane: 'pane_PovertySimplifiedtestv2_0',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(128,128,128,1.0)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['mapping_data_final_poverty_rate'] >= 14.800000 && feature.properties['mapping_data_final_poverty_rate'] <= 19.000000 ) {
+                return {
+                pane: 'pane_PovertySimplifiedtestv2_0',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(66,66,66,1.0)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['mapping_data_final_poverty_rate'] >= 19.000000 && feature.properties['mapping_data_final_poverty_rate'] <= 64.700000 ) {
+                return {
+                pane: 'pane_PovertySimplifiedtestv2_0',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(5,5,5,1.0)',
+                interactive: true,
+            }
+            }
+        }
+        
+        map.createPane('pane_PovertySimplifiedtestv2_0');
+        map.getPane('pane_PovertySimplifiedtestv2_0').style.zIndex = 400;
+        map.getPane('pane_PovertySimplifiedtestv2_0').style['mix-blend-mode'] = 'normal';
+        
+        var layer_PovertySimplifiedtestv2_0 = new L.geoJson(json_PovertySimplifiedtestv2_0, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_PovertySimplifiedtestv2_0',
+            layerName: 'layer_PovertySimplifiedtestv2_0',
+            pane: 'pane_PovertySimplifiedtestv2_0',
+            onEachFeature: pop_PovertySimplifiedtestv2_0,
+            style: style_PovertySimplifiedtestv2_0_0,
+        });
+        bounds_group.addLayer(layer_PovertySimplifiedtestv2_0);
+
+        // Vaccination Rate Layer - SIMPLIFIED POPUP
+        function pop_VaccinationSimplifiedTestv2_1(feature, layer) {
+            var popupContent = createPopupContent(feature, 'vaccination');
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+            layer.on('popupopen', function(e) {
+                addClassToPopupIfMedia(content, e.popup);
+            });
+            layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_VaccinationSimplifiedTestv2_1_0(feature) {
+            if (feature.properties['mapping_data_final_vaccinated_pct'] >= 0.000000 && feature.properties['mapping_data_final_vaccinated_pct'] <= 37.400002 ) {
+                return {
+                pane: 'pane_VaccinationSimplifiedTestv2_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(247,251,255,1.0)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['mapping_data_final_vaccinated_pct'] >= 37.400002 && feature.properties['mapping_data_final_vaccinated_pct'] <= 44.000000 ) {
+                return {
+                pane: 'pane_VaccinationSimplifiedTestv2_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(200,220,240,1.0)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['mapping_data_final_vaccinated_pct'] >= 44.000000 && feature.properties['mapping_data_final_vaccinated_pct'] <= 50.200001 ) {
+                return {
+                pane: 'pane_VaccinationSimplifiedTestv2_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(115,178,216,1.0)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['mapping_data_final_vaccinated_pct'] >= 50.200001 && feature.properties['mapping_data_final_vaccinated_pct'] <= 57.799999 ) {
+                return {
+                pane: 'pane_VaccinationSimplifiedTestv2_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(41,121,185,1.0)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['mapping_data_final_vaccinated_pct'] >= 57.799999 && feature.properties['mapping_data_final_vaccinated_pct'] <= 95.000000 ) {
+                return {
+                pane: 'pane_VaccinationSimplifiedTestv2_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(8,48,107,1.0)',
+                interactive: true,
+            }
+            }
+        }
+        
+        map.createPane('pane_VaccinationSimplifiedTestv2_1');
+        map.getPane('pane_VaccinationSimplifiedTestv2_1').style.zIndex = 401;
+        map.getPane('pane_VaccinationSimplifiedTestv2_1').style['mix-blend-mode'] = 'normal';
+        
+        var layer_VaccinationSimplifiedTestv2_1 = new L.geoJson(json_VaccinationSimplifiedTestv2_1, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_VaccinationSimplifiedTestv2_1',
+            layerName: 'layer_VaccinationSimplifiedTestv2_1',
+            pane: 'pane_VaccinationSimplifiedTestv2_1',
+            onEachFeature: pop_VaccinationSimplifiedTestv2_1,
+            style: style_VaccinationSimplifiedTestv2_1_0,
+        });
+        bounds_group.addLayer(layer_VaccinationSimplifiedTestv2_1);
+
+        // Cases per 1000 Layer - SIMPLIFIED POPUP
+        function pop_FinalCaseSimplifiedtestv2_2(feature, layer) {
+            var popupContent = createPopupContent(feature, 'cases');
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+            layer.on('popupopen', function(e) {
+                addClassToPopupIfMedia(content, e.popup);
+            });
+            layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_FinalCaseSimplifiedtestv2_2_0(feature) {
+            if (feature.properties['mapping_data_final_case_rate_per1k'] >= 0.000000 && feature.properties['mapping_data_final_case_rate_per1k'] <= 310.854508 ) {
+                return {
+                pane: 'pane_FinalCaseSimplifiedtestv2_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(255,245,240,1.0)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['mapping_data_final_case_rate_per1k'] >= 310.854508 && feature.properties['mapping_data_final_case_rate_per1k'] <= 358.566568 ) {
+                return {
+                pane: 'pane_FinalCaseSimplifiedtestv2_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(252,190,165,1.0)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['mapping_data_final_case_rate_per1k'] >= 358.566568 && feature.properties['mapping_data_final_case_rate_per1k'] <= 396.488792 ) {
+                return {
+                pane: 'pane_FinalCaseSimplifiedtestv2_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(251,112,80,1.0)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['mapping_data_final_case_rate_per1k'] >= 396.488792 && feature.properties['mapping_data_final_case_rate_per1k'] <= 444.574678 ) {
+                return {
+                pane: 'pane_FinalCaseSimplifiedtestv2_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(211,32,32,1.0)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['mapping_data_final_case_rate_per1k'] >= 444.574678 && feature.properties['mapping_data_final_case_rate_per1k'] <= 7592.592300 ) {
+                return {
+                pane: 'pane_FinalCaseSimplifiedtestv2_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(103,0,13,1.0)',
+                interactive: true,
+            }
+            }
+        }
+        
+        map.createPane('pane_FinalCaseSimplifiedtestv2_2');
+        map.getPane('pane_FinalCaseSimplifiedtestv2_2').style.zIndex = 402;
+        map.getPane('pane_FinalCaseSimplifiedtestv2_2').style['mix-blend-mode'] = 'normal';
+        
+        var layer_FinalCaseSimplifiedtestv2_2 = new L.geoJson(json_FinalCaseSimplifiedtestv2_2, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_FinalCaseSimplifiedtestv2_2',
+            layerName: 'layer_FinalCaseSimplifiedtestv2_2',
+            pane: 'pane_FinalCaseSimplifiedtestv2_2',
+            onEachFeature: pop_FinalCaseSimplifiedtestv2_2,
+            style: style_FinalCaseSimplifiedtestv2_2_0,
+        });
+        bounds_group.addLayer(layer_FinalCaseSimplifiedtestv2_2);
+
+        // Layer control functionality - FIXED VERSION
+        function initializeLayerControls() {
+            console.log("=== INITIALIZING LAYER CONTROLS ===");
+            
+            // Track current active layer
+            let activeLayer = null;
+            
+            // Add Poverty layer initially (since its checkbox is checked)
+            map.addLayer(layer_PovertySimplifiedtestv2_0);
+            activeLayer = layer_PovertySimplifiedtestv2_0;
+
+            // Remove popups from all layers except the active one
+            function updateLayerInteractivity() {
+                // Disable popups and interactions for inactive layers
+                layer_PovertySimplifiedtestv2_0.eachLayer(function(layer) {
+                    if (activeLayer !== layer_PovertySimplifiedtestv2_0) {
+                        layer.off('click');
+                        layer.unbindPopup();
+                    } else {
+                        layer.on('click', function(e) {
+                            pop_PovertySimplifiedtestv2_0(e.target.feature, e.target);
+                        });
+                        layer.bindPopup(function(layer) {
+                            return createPopupContent(layer.feature, 'poverty');
+                        });
+                    }
+                });
+
+                layer_VaccinationSimplifiedTestv2_1.eachLayer(function(layer) {
+                    if (activeLayer !== layer_VaccinationSimplifiedTestv2_1) {
+                        layer.off('click');
+                        layer.unbindPopup();
+                    } else {
+                        layer.on('click', function(e) {
+                            pop_VaccinationSimplifiedTestv2_1(e.target.feature, e.target);
+                        });
+                        layer.bindPopup(function(layer) {
+                            return createPopupContent(layer.feature, 'vaccination');
+                        });
+                    }
+                });
+
+                layer_FinalCaseSimplifiedtestv2_2.eachLayer(function(layer) {
+                    if (activeLayer !== layer_FinalCaseSimplifiedtestv2_2) {
+                        layer.off('click');
+                        layer.unbindPopup();
+                    } else {
+                        layer.on('click', function(e) {
+                            pop_FinalCaseSimplifiedtestv2_2(e.target.feature, e.target);
+                        });
+                        layer.bindPopup(function(layer) {
+                            return createPopupContent(layer.feature, 'cases');
+                        });
+                    }
+                });
+            }
+
+            // Setup event handlers
+            const povertyCheckbox = document.getElementById('checkbox-poverty');
+            const vaccinationCheckbox = document.getElementById('checkbox-vaccination');
+            const casesCheckbox = document.getElementById('checkbox-cases');
+
+            // Poverty layer control
+            povertyCheckbox.addEventListener('change', function(e) {
+                console.log("Poverty checkbox:", e.target.checked);
+                if (e.target.checked) {
+                    map.addLayer(layer_PovertySimplifiedtestv2_0);
+                    activeLayer = layer_PovertySimplifiedtestv2_0;
+                    // Uncheck other boxes
+                    vaccinationCheckbox.checked = false;
+                    casesCheckbox.checked = false;
+                    map.removeLayer(layer_VaccinationSimplifiedTestv2_1);
+                    map.removeLayer(layer_FinalCaseSimplifiedtestv2_2);
+                } else if (activeLayer === layer_PovertySimplifiedtestv2_0) {
+                    map.removeLayer(layer_PovertySimplifiedtestv2_0);
+                    activeLayer = null;
+                }
+                updateLayerInteractivity();
+            });
+
+            // Vaccination layer control
+            vaccinationCheckbox.addEventListener('change', function(e) {
+                console.log("Vaccination checkbox:", e.target.checked);
+                if (e.target.checked) {
+                    map.addLayer(layer_VaccinationSimplifiedTestv2_1);
+                    activeLayer = layer_VaccinationSimplifiedTestv2_1;
+                    // Uncheck other boxes
+                    povertyCheckbox.checked = false;
+                    casesCheckbox.checked = false;
+                    map.removeLayer(layer_PovertySimplifiedtestv2_0);
+                    map.removeLayer(layer_FinalCaseSimplifiedtestv2_2);
+                } else if (activeLayer === layer_VaccinationSimplifiedTestv2_1) {
+                    map.removeLayer(layer_VaccinationSimplifiedTestv2_1);
+                    activeLayer = null;
+                }
+                updateLayerInteractivity();
+            });
+
+            // Cases layer control - MAKE THIS EXCLUSIVE
+            casesCheckbox.addEventListener('change', function(e) {
+                console.log("Cases checkbox:", e.target.checked);
+                if (e.target.checked) {
+                    map.addLayer(layer_FinalCaseSimplifiedtestv2_2);
+                    activeLayer = layer_FinalCaseSimplifiedtestv2_2;
+                    // Uncheck other boxes
+                    povertyCheckbox.checked = false;
+                    vaccinationCheckbox.checked = false;
+                    map.removeLayer(layer_PovertySimplifiedtestv2_0);
+                    map.removeLayer(layer_VaccinationSimplifiedTestv2_1);
+                } else if (activeLayer === layer_FinalCaseSimplifiedtestv2_2) {
+                    map.removeLayer(layer_FinalCaseSimplifiedtestv2_2);
+                    activeLayer = null;
+                }
+                updateLayerInteractivity();
+            });
+
+            // Add click handlers for labels
+            document.querySelectorAll('.layer-label').forEach(function(label) {
+                label.addEventListener('click', function() {
+                    const checkbox = this.previousElementSibling;
+                    checkbox.checked = !checkbox.checked;
+                    const event = new Event('change');
+                    checkbox.dispatchEvent(event);
+                });
+            });
+
+            // Initialize interactivity
+            updateLayerInteractivity();
+            console.log("✅ Layer controls initialized successfully!");
+        }
+
+        // Initialize layer controls when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(initializeLayerControls, 500);
+        });
+
+        setBounds();
+        </script>
+    </body>
+</html>

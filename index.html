@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>COVID-19 Vulnerability Map</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            line-height: 1.6;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            position: relative;
+        }
+        
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 2.5em;
+        }
+        
+        .header p {
+            color: #7f8c8d;
+            font-size: 1.2em;
+        }
+        
+        .description {
+            margin-bottom: 40px;
+        }
+        
+        .description h2 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin: 30px 0;
+        }
+        
+        .feature-card {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .feature-card h3 {
+            color: #2c3e50;
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .fullscreen-button {
+            display: block;
+            width: 200px;
+            margin: 40px auto;
+            background: #27ae60;
+            color: white;
+            text-align: center;
+            padding: 15px 30px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 1.2em;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);
+        }
+        
+        .fullscreen-button:hover {
+            background: #219653;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(39, 174, 96, 0.4);
+        }
+        
+        .instructions {
+            background: #e8f4f8;
+            padding: 25px;
+            border-radius: 10px;
+            margin-top: 30px;
+        }
+        
+        .instructions h3 {
+            color: #2c3e50;
+            margin-top: 0;
+        }
+        
+        .instructions ul {
+            padding-left: 20px;
+        }
+        
+        .instructions li {
+            margin-bottom: 10px;
+        }
+
+        .github-link {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .github-link a {
+            color: #3498db;
+            text-decoration: none;
+            font-weight: bold;
+            padding: 10px 20px;
+            border: 2px solid #3498db;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .github-link a:hover {
+            background: #3498db;
+            color: white;
+        }
+
+        .map-metadata {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .map-metadata h3 {
+            color: #2c3e50;
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>COVID-19 Vulnerability Analysis Map</h1>
+            <p>Interactive Visualization of Public Health Data Across US Counties</p>
+        </div>
+
+        <!-- GitHub Repository Link -->
+        <div class="github-link">
+            <a href="https://github.com/KIAChy21/COVID19-USA-2023-Vaccination-Analysis" 
+               target="_blank"
+               aria-label="View project repository on GitHub">
+               📁 View Project Repository on GitHub
+            </a>
+        </div>
+
+        <div class="description">
+            <h2>About This Project</h2>
+            <p>This interactive mapping platform provides comprehensive insights into COVID-19 vulnerability factors across United States counties. By integrating socioeconomic data with public health metrics, we enable researchers, policymakers, and the public to explore regional disparities in pandemic impact and preparedness.</p>
+            
+            <p>The map combines multiple datasets to visualize key indicators including poverty rates, vaccination coverage, and COVID-19 case incidence, allowing for comparative analysis and identification of vulnerable regions.</p>
+        </div>
+
+        <div class="features">
+            <div class="feature-card">
+                <h3>📊 Poverty Rate Analysis</h3>
+                <p>Explore county-level poverty data to understand socioeconomic vulnerability and resource distribution patterns across different regions.</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>💉 Vaccination Coverage</h3>
+                <p>Visualize immunization rates to identify areas with varying levels of protection and potential gaps in vaccination infrastructure.</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>🦠 Case Incidence Mapping</h3>
+                <p>Analyze COVID-19 case rates per 1000 population to understand geographic patterns of disease spread and outbreak hotspots.</p>
+            </div>
+        </div>
+
+        <!-- Map Technical Metadata -->
+        <div class="map-metadata">
+            <h3>Map Technical Details</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                <div>
+                    <strong>Projection:</strong><br>WGS84 (EPSG:4326)
+                </div>
+                <div>
+                    <strong>Scale:</strong><br>Variable (Interactive Zoom)
+                </div>
+                <div>
+                    <strong>Direction:</strong><br>North ↑
+                </div>
+                <div>
+                    <strong>Software:</strong><br>QGIS + qgis2web
+                </div>
+            </div>
+        </div>
+
+        <!-- Single Full Screen Map Link -->
+        <a href="fullscreen.html" 
+           class="fullscreen-button" 
+           target="_blank"
+           aria-label="Open full screen interactive COVID-19 vulnerability map">
+           🗺 View Interactive Map
+        </a>
+
+        <div class="instructions">
+            <h3>How to Use the Interactive Map</h3>
+            <ul>
+                <li><strong>Layer Controls</strong>: Use the checkboxes in the top-right corner to toggle different datasets on/off</li>
+                <li><strong>Navigation</strong>: Zoom with mouse wheel and pan by clicking/dragging the map</li>
+                <li><strong>Detailed Information</strong>: Click on any county to view detailed popup information</li>
+                <li><strong>Multiple Views</strong>: Compare different vulnerability factors by showing/hiding layers</li>
+            </ul>
+            
+            <h3>Data Sources & Methodology</h3>
+            <p>This visualization integrates data from the US Census Bureau, CDC vaccination records, and state health department case reports. All data is normalized and aggregated at the county level for consistent comparison.</p>
+
+            <h3>Live GitHub Pages Link</h3>
+            <p>Your interactive map is also available at:<br>
+            <a href="https://kiachy21.github.io/COVID19-USA-2023-Vaccination-Analysis/" target="_blank">
+                https://kiachy21.github.io/COVID19-USA-2023-Vaccination-Analysis/
+            </a></p>
+        </div>
+    </div>
+</body>
+</html>

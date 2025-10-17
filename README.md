@@ -28,7 +28,7 @@ In future mapping, I would consider applying spatial regression to explain spati
 - File: us-counties.csv  
 - Variables: County FIPS codes, case counts, dates  
 - URL: [https://github.com/nytimes/covid-19-data](https://github.com/nytimes/covid-19-data)
-- see image: ![COVID-19 Cases Data Source](images/NY-Times-COVID-19-Data-GitHub-Repository.png)
+- see image: ![COVID-19 Cases Data Source](images/NY Times COVID-19 Data GitHub Repository.png)
 
 #### Vaccination Data
 - Source: CDC COVID-19 Vaccination Data  
@@ -36,7 +36,7 @@ In future mapping, I would consider applying spatial regression to explain spati
 - Variables: Vaccination percentages, county FIPS codes  
 - Collection: CDC official data portal
 - URL: [https://data.cdc.gov/Vaccinations/COVID-19-Vaccinations-in-the-United-States-County/8xkx-amqh](https://data.cdc.gov/Vaccinations/COVID-19-Vaccinations-in-the-United-States-County/8xkx-amqh)
-- see image: ![Vaccination Data Source](images/CDC-COVID-19-Vaccination-Data.png)
+- see image: ![Vaccination Data Source](images/CDC COVID-19 Vaccination Data.png)
 
 #### Socioeconomic Data
 - Source: U.S. Census Bureau American Community Survey (ACS)  
@@ -117,7 +117,7 @@ In future mapping, I would consider applying spatial regression to explain spati
 - *Controls:* Zoom, pan, optional fullscreen, Gratitude
 - *Projection:* EPSG:4326 (WGS84)
 
-![COVID-19 Layer Symbology](images/Cases-per-1000.png)
+![COVID-19 Layer Symbology](images/Cases per 1000.png)
 Figure 1: QGIS symbology settings for COVID-19 cases choropleth
 
 *Poverty Rate Layer*
@@ -127,7 +127,7 @@ Figure 1: QGIS symbology settings for COVID-19 cases choropleth
 - *Controls:* Zoom, pan, optional fullscreen, Gratitude
 - *Projection:* EPSG:4326 (WGS84)
 
-![Poverty Layer Symbology](images/Poverty-Rate.png)
+![Poverty Layer Symbology](images/Poverty Rate.png)
 Figure 2: QGIS symbology settings for poverty rate choropleth
 
 *Vaccination Rate Layer*
@@ -137,17 +137,17 @@ Figure 2: QGIS symbology settings for poverty rate choropleth
 - *Controls:* Zoom, pan, optional fullscreen, Gratitude
 - *Projection:* EPSG:4326 (WGS84)
 
-![Vaccination Layer Symbology](images/YVaccination-Rate.png)
+![Vaccination Layer Symbology](images/Vaccination Rate.png)
 Figure 3: QGIS symbology settings for vaccination rate choropleth
 
 ## Exporting the Interactive Map
 
 ### 1. Use qgis2web
 
-![qgis2web Export Settings 1](images/Layers-and-Groups-of-Export-to-web-map.png)
+![qgis2web Export Settings 1](images/Layers and Groups of Export to web map.png)
 Figure 4: qgis2web plugin interface with export configuration
 
-![qgis2web Export Settings 2](images/Settings-of-Export-to-web-map.png)
+![qgis2web Export Settings 2](images/Settings of Export to web map.png)
 Figure 5: qgis2web plugin interface with export configuration
 
 ### 2. Folder Structure After Export

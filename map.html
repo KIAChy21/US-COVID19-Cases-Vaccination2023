@@ -700,19 +700,36 @@
         bounds_group.addLayer(layer_Covid19CaseratebyCountyin2023_2);
         // Don't add to map initially - controlled by checkbox
 
-        // Layer control functionality
-        document.addEventListener('DOMContentLoaded', function() {
-            // Wait for everything to load
-            setTimeout(initializeLayerControls, 1000);
-        });
-
+        // Layer control functionality - IMPROVED VERSION
         function initializeLayerControls() {
             console.log("=== INITIALIZING LAYER CONTROLS ===");
             
+            // First, ensure all layers are properly initialized
+            if (typeof layer_PovertyRatebyCountyin2023_0 === 'undefined') {
+                console.error("Poverty layer not loaded");
+                return;
+            }
+            if (typeof layer_VaccinationRatebyCountyin2023_1 === 'undefined') {
+                console.error("Vaccination layer not loaded");
+                return;
+            }
+            if (typeof layer_Covid19CaseratebyCountyin2023_2 === 'undefined') {
+                console.error("Cases layer not loaded");
+                return;
+            }
+
+            // Remove all layers first to ensure clean state
+            map.removeLayer(layer_PovertyRatebyCountyin2023_0);
+            map.removeLayer(layer_VaccinationRatebyCountyin2023_1);
+            map.removeLayer(layer_Covid19CaseratebyCountyin2023_2);
+
             // Set initial visibility - only Poverty layer visible
-            map.addLayer(layer_PovertyRatebyCountyin2023_0); // Add Poverty layer initially
-            layer_VaccinationRatebyCountyin2023_1.remove(); // Ensure other layers are removed
-            layer_Covid19CaseratebyCountyin2023_2.remove();
+            map.addLayer(layer_PovertyRatebyCountyin2023_0);
+            
+            // Update checkbox states to match
+            document.getElementById('checkbox-poverty').checked = true;
+            document.getElementById('checkbox-vaccination').checked = false;
+            document.getElementById('checkbox-cases').checked = false;
 
             // Setup event handlers
             const povertyCheckbox = document.getElementById('checkbox-poverty');
@@ -761,6 +778,19 @@
 
             console.log("=== LAYER CONTROLS INITIALIZATION COMPLETE ===");
         }
+
+        // Replace the DOMContentLoaded event with this:
+        document.addEventListener('DOMContentLoaded', function() {
+            // Wait longer and ensure everything is loaded
+            setTimeout(function() {
+                if (map && typeof layer_PovertyRatebyCountyin2023_0 !== 'undefined') {
+                    initializeLayerControls();
+                } else {
+                    // If still not ready, try again
+                    setTimeout(initializeLayerControls, 2000);
+                }
+            }, 1500);
+        });
 
         setBounds();
         </script>

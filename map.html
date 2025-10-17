@@ -269,24 +269,30 @@
         <script src="js/labelgun.min.js"></script>
         <script src="js/labels.js"></script>
         <script src="js/leaflet.photon.js"></script>
-        <script src="data/PovertySimplifiedtestv2_0.js"></script>
-        <script src="data/VaccinationSimplifiedTestv2_1.js"></script>
-        <script src="data/FinalCaseSimplifiedtestv2_2.js"></script>
+        <script src="data/PovertyRatebyCountyin2023_0.js"></script>
+        <script src="data/VaccinationRatebyCountyin2023_1.js"></script>
+        <script src="data/Covid19CaseratebyCountyin2023_2.js"></script>
         <script>
-        // Debug data loading
-        console.log("=== CHECKING DATA LOADING ===");
-        console.log("Poverty data:", typeof json_PovertySimplifiedtestv2_0);
-        console.log("Vaccination data:", typeof json_VaccinationSimplifiedTestv2_1);
-        console.log("Cases data:", typeof json_FinalCaseSimplifiedtestv2_2);
-
+        // Initialize map first
         var map = L.map('map', {
             zoomControl:false, maxZoom:28, minZoom:1
-        }).fitBounds([[-2.592239639225788,-203.50909460096662],[101.00357599821305,-40.65613904541115]]);
+        }).fitBounds([[15.066465080349172,-140.29846990743468],[70.4270422091094,-57.124738829185304]]);
         
         // Add base maps
         var osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
+        
+        var satelliteLayer = L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+            maxZoom: 20,
+            subdomains: ['mt0','mt1','mt2','mt3'],
+            attribution: '&copy; Google'
+        });
+        
+        var baseMaps = {
+            "OpenStreetMap": osmLayer,
+            "Satellite": satelliteLayer
+        };
         
         var hash = new L.Hash(map);
         map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
@@ -307,127 +313,73 @@
          return tempDiv.innerHTML;
         }
         
-        // modify popup if contains media
-        function addClassToPopupIfMedia(content, popup) {
-            var tempDiv = document.createElement('div');
-            tempDiv.innerHTML = content;
-            var imgTd = tempDiv.querySelector('td img');
-            if (imgTd) {
-                var src = imgTd.getAttribute('src');
-                if (/\.(jpg|jpeg|png|gif|bmp|webp|avif)$/i.test(src)) {
-                    popup._contentNode.classList.add('media');
-                    setTimeout(function() {
-                        popup.update();
-                    }, 10);
-                } else if (/\.(mp3|wav|ogg|aac)$/i.test(src)) {
-                    var audio = document.createElement('audio');
-                    audio.controls = true;
-                    audio.src = src;
-                    imgTd.parentNode.replaceChild(audio, imgTd);
-                    popup._contentNode.classList.add('media');
-                    setTimeout(function() {
-                        popup.setContent(tempDiv.innerHTML);
-                        popup.update();
-                    }, 10);
-                } else if (/\.(mp4|webm|ogg|mov)$/i.test(src)) {
-                    var video = document.createElement('video');
-                    video.controls = true;
-                    video.src = src;
-                    video.style.width = "400px";
-                    video.style.height = "300px";
-                    video.style.maxHeight = "60vh";
-                    video.style.maxWidth = "60vw";
-                    imgTd.parentNode.replaceChild(video, imgTd);
-                    popup._contentNode.classList.add('media');
-                    video.addEventListener('loadedmetadata', function() {
-                        popup.update();
-                    });
-                    setTimeout(function() {
-                        popup.setContent(tempDiv.innerHTML);
-                        popup.update();
-                    }, 10);
-                } else {
-                    popup._contentNode.classList.remove('media');
-                }
-            } else {
-                popup._contentNode.classList.remove('media');
-            }
-        }
+        // add class to format popup if it contains media
+		function addClassToPopupIfMedia(content, popup) {
+			var tempDiv = document.createElement('div');
+			tempDiv.innerHTML = content;
+			if (tempDiv.querySelector('td img')) {
+				popup._contentNode.classList.add('media');
+					// Delay to force the redraw
+					setTimeout(function() {
+						popup.update();
+					}, 10);
+			} else {
+				popup._contentNode.classList.remove('media');
+			}
+		}
         
         var zoomControl = L.control.zoom({
             position: 'topleft'
         }).addTo(map);
+
+        // Add scale bar to bottom right
+        L.control.scale({
+            position: 'bottomright',
+            metric: true,
+            imperial: false,
+            maxWidth: 150
+        }).addTo(map);
+
+        // Add north arrow below top left zoom controls
+        var northArrow = L.control({position: 'topleft'});
+        northArrow.onAdd = function(map) {
+            var div = L.DomUtil.create('div', 'north-arrow');
+            div.innerHTML = '↑ N';
+            div.style.cssText = 'background: white; padding: 6px 8px; border-radius: 4px; border: 1px solid #ccc; font-weight: bold; font-size: 14px; margin-top: 90px; box-shadow: 0 1px 3px rgba(0,0,0,0.2);';
+            div.title = 'North';
+            return div;
+        };
+        northArrow.addTo(map);
         
         var bounds_group = new L.featureGroup([]);
         
         function setBounds() {
         }
 
-        // Helper function to create popup content based on layer type
-        function createPopupContent(feature, layerType) {
-            var popupContent = '';
-            
-            switch(layerType) {
-                case 'poverty':
-                    popupContent = '<table style="font-family: Arial, sans-serif; font-size: 14px; min-width: 250px;">\
-                            <tr>\
-                                <td colspan="2" style="text-align: center; padding: 8px; background: #2c3e50; color: white; font-weight: bold; border-radius: 5px 5px 0 0;">\
-                                    ' + (feature.properties['NAME'] !== null ? autolinker.link(String(feature.properties['NAME']).replace(/'/g, '\'').toLocaleString()) : 'No Name') + '\
-                                </td>\
-                            </tr>\
-                            <tr>\
-                                <td style="padding: 6px 8px; border-bottom: 1px solid #eee;"><strong>Poverty Rate:</strong></td>\
-                                <td style="padding: 6px 8px; border-bottom: 1px solid #eee; text-align: right;">' + (feature.properties['mapping_data_final_poverty_rate'] !== null ? autolinker.link(String(feature.properties['mapping_data_final_poverty_rate']).replace(/'/g, '\'').toLocaleString()) + '%' : 'N/A') + '</td>\
-                            </tr>\
-                        </table>';
-                    break;
-                    
-                case 'vaccination':
-                    popupContent = '<table style="font-family: Arial, sans-serif; font-size: 14px; min-width: 250px;">\
-                            <tr>\
-                                <td colspan="2" style="text-align: center; padding: 8px; background: #2c3e50; color: white; font-weight: bold; border-radius: 5px 5px 0 0;">\
-                                    ' + (feature.properties['NAME'] !== null ? autolinker.link(String(feature.properties['NAME']).replace(/'/g, '\'').toLocaleString()) : 'No Name') + '\
-                                </td>\
-                            </tr>\
-                            <tr>\
-                                <td style="padding: 6px 8px; border-bottom: 1px solid #eee;"><strong>Vaccination Rate:</strong></td>\
-                                <td style="padding: 6px 8px; border-bottom: 1px solid #eee; text-align: right;">' + (feature.properties['mapping_data_final_vaccinated_pct'] !== null ? autolinker.link(String(feature.properties['mapping_data_final_vaccinated_pct']).replace(/'/g, '\'').toLocaleString()) + '%' : 'N/A') + '</td>\
-                            </tr>\
-                        </table>';
-                    break;
-                    
-                case 'cases':
-                    popupContent = '<table style="font-family: Arial, sans-serif; font-size: 14px; min-width: 250px;">\
-                            <tr>\
-                                <td colspan="2" style="text-align: center; padding: 8px; background: #2c3e50; color: white; font-weight: bold; border-radius: 5px 5px 0 0;">\
-                                    ' + (feature.properties['NAME'] !== null ? autolinker.link(String(feature.properties['NAME']).replace(/'/g, '\'').toLocaleString()) : 'No Name') + '\
-                                </td>\
-                            </tr>\
-                            <tr>\
-                                <td style="padding: 6px 8px; border-bottom: 1px solid #eee;"><strong>Cases per 1000:</strong></td>\
-                                <td style="padding: 6px 8px; border-bottom: 1px solid #eee; text-align: right;">' + (feature.properties['mapping_data_final_case_rate_per1k'] !== null ? autolinker.link(String(feature.properties['mapping_data_final_case_rate_per1k']).replace(/'/g, '\'').toLocaleString()) : 'N/A') + '</td>\
-                            </tr>\
-                        </table>';
-                    break;
-            }
-            
-            return popupContent;
-        }
-
-        // Poverty Rate Layer - SIMPLIFIED POPUP
-        function pop_PovertySimplifiedtestv2_0(feature, layer) {
-            var popupContent = createPopupContent(feature, 'poverty');
+        // Your existing layer functions (unchanged)
+        function pop_PovertyRatebyCountyin2023_0(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['fid'] !== null ? autolinker.link(String(feature.properties['fid']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['NAME'] !== null ? autolinker.link(String(feature.properties['NAME']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['mapping_data_final_poverty_rate'] !== null ? autolinker.link(String(feature.properties['mapping_data_final_poverty_rate']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
             var content = removeEmptyRowsFromPopupContent(popupContent, feature);
-            layer.on('popupopen', function(e) {
-                addClassToPopupIfMedia(content, e.popup);
-            });
-            layer.bindPopup(content, { maxHeight: 400 });
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
         }
 
-        function style_PovertySimplifiedtestv2_0_0(feature) {
+        function style_PovertyRatebyCountyin2023_0_0(feature) {
             if (feature.properties['mapping_data_final_poverty_rate'] >= 0.000000 && feature.properties['mapping_data_final_poverty_rate'] <= 9.280000 ) {
                 return {
-                pane: 'pane_PovertySimplifiedtestv2_0',
+                pane: 'pane_PovertyRatebyCountyin2023_0',
                 opacity: 1,
                 color: 'rgba(35,35,35,1.0)',
                 dashArray: '',
@@ -442,7 +394,7 @@
             }
             if (feature.properties['mapping_data_final_poverty_rate'] >= 9.280000 && feature.properties['mapping_data_final_poverty_rate'] <= 12.000000 ) {
                 return {
-                pane: 'pane_PovertySimplifiedtestv2_0',
+                pane: 'pane_PovertyRatebyCountyin2023_0',
                 opacity: 1,
                 color: 'rgba(35,35,35,1.0)',
                 dashArray: '',
@@ -457,7 +409,7 @@
             }
             if (feature.properties['mapping_data_final_poverty_rate'] >= 12.000000 && feature.properties['mapping_data_final_poverty_rate'] <= 14.800000 ) {
                 return {
-                pane: 'pane_PovertySimplifiedtestv2_0',
+                pane: 'pane_PovertyRatebyCountyin2023_0',
                 opacity: 1,
                 color: 'rgba(35,35,35,1.0)',
                 dashArray: '',
@@ -472,7 +424,7 @@
             }
             if (feature.properties['mapping_data_final_poverty_rate'] >= 14.800000 && feature.properties['mapping_data_final_poverty_rate'] <= 19.000000 ) {
                 return {
-                pane: 'pane_PovertySimplifiedtestv2_0',
+                pane: 'pane_PovertyRatebyCountyin2023_0',
                 opacity: 1,
                 color: 'rgba(35,35,35,1.0)',
                 dashArray: '',
@@ -487,7 +439,7 @@
             }
             if (feature.properties['mapping_data_final_poverty_rate'] >= 19.000000 && feature.properties['mapping_data_final_poverty_rate'] <= 64.700000 ) {
                 return {
-                pane: 'pane_PovertySimplifiedtestv2_0',
+                pane: 'pane_PovertyRatebyCountyin2023_0',
                 opacity: 1,
                 color: 'rgba(35,35,35,1.0)',
                 dashArray: '',
@@ -502,35 +454,45 @@
             }
         }
         
-        map.createPane('pane_PovertySimplifiedtestv2_0');
-        map.getPane('pane_PovertySimplifiedtestv2_0').style.zIndex = 400;
-        map.getPane('pane_PovertySimplifiedtestv2_0').style['mix-blend-mode'] = 'normal';
+        map.createPane('pane_PovertyRatebyCountyin2023_0');
+        map.getPane('pane_PovertyRatebyCountyin2023_0').style.zIndex = 400;
+        map.getPane('pane_PovertyRatebyCountyin2023_0').style['mix-blend-mode'] = 'normal';
         
-        var layer_PovertySimplifiedtestv2_0 = new L.geoJson(json_PovertySimplifiedtestv2_0, {
+        var layer_PovertyRatebyCountyin2023_0 = new L.geoJson(json_PovertyRatebyCountyin2023_0, {
             attribution: '',
             interactive: true,
-            dataVar: 'json_PovertySimplifiedtestv2_0',
-            layerName: 'layer_PovertySimplifiedtestv2_0',
-            pane: 'pane_PovertySimplifiedtestv2_0',
-            onEachFeature: pop_PovertySimplifiedtestv2_0,
-            style: style_PovertySimplifiedtestv2_0_0,
+            dataVar: 'json_PovertyRatebyCountyin2023_0',
+            layerName: 'layer_PovertyRatebyCountyin2023_0',
+            pane: 'pane_PovertyRatebyCountyin2023_0',
+            onEachFeature: pop_PovertyRatebyCountyin2023_0,
+            style: style_PovertyRatebyCountyin2023_0_0,
         });
-        bounds_group.addLayer(layer_PovertySimplifiedtestv2_0);
+        bounds_group.addLayer(layer_PovertyRatebyCountyin2023_0);
+        // Don't add to map initially - controlled by checkbox
 
-        // Vaccination Rate Layer - SIMPLIFIED POPUP
-        function pop_VaccinationSimplifiedTestv2_1(feature, layer) {
-            var popupContent = createPopupContent(feature, 'vaccination');
+        function pop_VaccinationRatebyCountyin2023_1(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['fid'] !== null ? autolinker.link(String(feature.properties['fid']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['NAME'] !== null ? autolinker.link(String(feature.properties['NAME']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['mapping_data_final_vaccinated_pct'] !== null ? autolinker.link(String(feature.properties['mapping_data_final_vaccinated_pct']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
             var content = removeEmptyRowsFromPopupContent(popupContent, feature);
-            layer.on('popupopen', function(e) {
-                addClassToPopupIfMedia(content, e.popup);
-            });
-            layer.bindPopup(content, { maxHeight: 400 });
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
         }
 
-        function style_VaccinationSimplifiedTestv2_1_0(feature) {
+        function style_VaccinationRatebyCountyin2023_1_0(feature) {
             if (feature.properties['mapping_data_final_vaccinated_pct'] >= 0.000000 && feature.properties['mapping_data_final_vaccinated_pct'] <= 37.400002 ) {
                 return {
-                pane: 'pane_VaccinationSimplifiedTestv2_1',
+                pane: 'pane_VaccinationRatebyCountyin2023_1',
                 opacity: 1,
                 color: 'rgba(35,35,35,1.0)',
                 dashArray: '',
@@ -545,7 +507,7 @@
             }
             if (feature.properties['mapping_data_final_vaccinated_pct'] >= 37.400002 && feature.properties['mapping_data_final_vaccinated_pct'] <= 44.000000 ) {
                 return {
-                pane: 'pane_VaccinationSimplifiedTestv2_1',
+                pane: 'pane_VaccinationRatebyCountyin2023_1',
                 opacity: 1,
                 color: 'rgba(35,35,35,1.0)',
                 dashArray: '',
@@ -560,7 +522,7 @@
             }
             if (feature.properties['mapping_data_final_vaccinated_pct'] >= 44.000000 && feature.properties['mapping_data_final_vaccinated_pct'] <= 50.200001 ) {
                 return {
-                pane: 'pane_VaccinationSimplifiedTestv2_1',
+                pane: 'pane_VaccinationRatebyCountyin2023_1',
                 opacity: 1,
                 color: 'rgba(35,35,35,1.0)',
                 dashArray: '',
@@ -575,7 +537,7 @@
             }
             if (feature.properties['mapping_data_final_vaccinated_pct'] >= 50.200001 && feature.properties['mapping_data_final_vaccinated_pct'] <= 57.799999 ) {
                 return {
-                pane: 'pane_VaccinationSimplifiedTestv2_1',
+                pane: 'pane_VaccinationRatebyCountyin2023_1',
                 opacity: 1,
                 color: 'rgba(35,35,35,1.0)',
                 dashArray: '',
@@ -590,7 +552,7 @@
             }
             if (feature.properties['mapping_data_final_vaccinated_pct'] >= 57.799999 && feature.properties['mapping_data_final_vaccinated_pct'] <= 95.000000 ) {
                 return {
-                pane: 'pane_VaccinationSimplifiedTestv2_1',
+                pane: 'pane_VaccinationRatebyCountyin2023_1',
                 opacity: 1,
                 color: 'rgba(35,35,35,1.0)',
                 dashArray: '',
@@ -605,35 +567,49 @@
             }
         }
         
-        map.createPane('pane_VaccinationSimplifiedTestv2_1');
-        map.getPane('pane_VaccinationSimplifiedTestv2_1').style.zIndex = 401;
-        map.getPane('pane_VaccinationSimplifiedTestv2_1').style['mix-blend-mode'] = 'normal';
+        map.createPane('pane_VaccinationRatebyCountyin2023_1');
+        map.getPane('pane_VaccinationRatebyCountyin2023_1').style.zIndex = 401;
+        map.getPane('pane_VaccinationRatebyCountyin2023_1').style['mix-blend-mode'] = 'normal';
         
-        var layer_VaccinationSimplifiedTestv2_1 = new L.geoJson(json_VaccinationSimplifiedTestv2_1, {
+        var layer_VaccinationRatebyCountyin2023_1 = new L.geoJson(json_VaccinationRatebyCountyin2023_1, {
             attribution: '',
             interactive: true,
-            dataVar: 'json_VaccinationSimplifiedTestv2_1',
-            layerName: 'layer_VaccinationSimplifiedTestv2_1',
-            pane: 'pane_VaccinationSimplifiedTestv2_1',
-            onEachFeature: pop_VaccinationSimplifiedTestv2_1,
-            style: style_VaccinationSimplifiedTestv2_1_0,
+            dataVar: 'json_VaccinationRatebyCountyin2023_1',
+            layerName: 'layer_VaccinationRatebyCountyin2023_1',
+            pane: 'pane_VaccinationRatebyCountyin2023_1',
+            onEachFeature: pop_VaccinationRatebyCountyin2023_1,
+            style: style_VaccinationRatebyCountyin2023_1_0,
         });
-        bounds_group.addLayer(layer_VaccinationSimplifiedTestv2_1);
+        bounds_group.addLayer(layer_VaccinationRatebyCountyin2023_1);
+        // Don't add to map initially - controlled by checkbox
 
-        // Cases per 1000 Layer - SIMPLIFIED POPUP
-        function pop_FinalCaseSimplifiedtestv2_2(feature, layer) {
-            var popupContent = createPopupContent(feature, 'cases');
+        function pop_Covid19CaseratebyCountyin2023_2(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['fid'] !== null ? autolinker.link(String(feature.properties['fid']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['NAME'] !== null ? autolinker.link(String(feature.properties['NAME']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['mapping_data_final_case_rate_per1k'] !== null ? autolinker.link(String(feature.properties['mapping_data_final_case_rate_per1k']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">popup_html</th>\
+                        <td class="visible-with-data" id="popup_html">' + (feature.properties['popup_html'] !== null ? autolinker.link(String(feature.properties['popup_html']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
             var content = removeEmptyRowsFromPopupContent(popupContent, feature);
-            layer.on('popupopen', function(e) {
-                addClassToPopupIfMedia(content, e.popup);
-            });
-            layer.bindPopup(content, { maxHeight: 400 });
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
         }
 
-        function style_FinalCaseSimplifiedtestv2_2_0(feature) {
+        function style_Covid19CaseratebyCountyin2023_2_0(feature) {
             if (feature.properties['mapping_data_final_case_rate_per1k'] >= 0.000000 && feature.properties['mapping_data_final_case_rate_per1k'] <= 310.854508 ) {
                 return {
-                pane: 'pane_FinalCaseSimplifiedtestv2_2',
+                pane: 'pane_Covid19CaseratebyCountyin2023_2',
                 opacity: 1,
                 color: 'rgba(35,35,35,1.0)',
                 dashArray: '',
@@ -642,13 +618,13 @@
                 weight: 1.0, 
                 fill: true,
                 fillOpacity: 1,
-                fillColor: 'rgba(255,245,240,1.0)',
+                fillColor: 'rgba(255,255,255,1.0)',
                 interactive: true,
             }
             }
             if (feature.properties['mapping_data_final_case_rate_per1k'] >= 310.854508 && feature.properties['mapping_data_final_case_rate_per1k'] <= 358.566568 ) {
                 return {
-                pane: 'pane_FinalCaseSimplifiedtestv2_2',
+                pane: 'pane_Covid19CaseratebyCountyin2023_2',
                 opacity: 1,
                 color: 'rgba(35,35,35,1.0)',
                 dashArray: '',
@@ -657,13 +633,13 @@
                 weight: 1.0, 
                 fill: true,
                 fillOpacity: 1,
-                fillColor: 'rgba(252,190,165,1.0)',
+                fillColor: 'rgba(255,191,191,1.0)',
                 interactive: true,
             }
             }
             if (feature.properties['mapping_data_final_case_rate_per1k'] >= 358.566568 && feature.properties['mapping_data_final_case_rate_per1k'] <= 396.488792 ) {
                 return {
-                pane: 'pane_FinalCaseSimplifiedtestv2_2',
+                pane: 'pane_Covid19CaseratebyCountyin2023_2',
                 opacity: 1,
                 color: 'rgba(35,35,35,1.0)',
                 dashArray: '',
@@ -672,13 +648,13 @@
                 weight: 1.0, 
                 fill: true,
                 fillOpacity: 1,
-                fillColor: 'rgba(251,112,80,1.0)',
+                fillColor: 'rgba(255,128,128,1.0)',
                 interactive: true,
             }
             }
             if (feature.properties['mapping_data_final_case_rate_per1k'] >= 396.488792 && feature.properties['mapping_data_final_case_rate_per1k'] <= 444.574678 ) {
                 return {
-                pane: 'pane_FinalCaseSimplifiedtestv2_2',
+                pane: 'pane_Covid19CaseratebyCountyin2023_2',
                 opacity: 1,
                 color: 'rgba(35,35,35,1.0)',
                 dashArray: '',
@@ -687,13 +663,13 @@
                 weight: 1.0, 
                 fill: true,
                 fillOpacity: 1,
-                fillColor: 'rgba(211,32,32,1.0)',
+                fillColor: 'rgba(255,64,64,1.0)',
                 interactive: true,
             }
             }
             if (feature.properties['mapping_data_final_case_rate_per1k'] >= 444.574678 && feature.properties['mapping_data_final_case_rate_per1k'] <= 7592.592300 ) {
                 return {
-                pane: 'pane_FinalCaseSimplifiedtestv2_2',
+                pane: 'pane_Covid19CaseratebyCountyin2023_2',
                 opacity: 1,
                 color: 'rgba(35,35,35,1.0)',
                 dashArray: '',
@@ -702,83 +678,41 @@
                 weight: 1.0, 
                 fill: true,
                 fillOpacity: 1,
-                fillColor: 'rgba(103,0,13,1.0)',
+                fillColor: 'rgba(255,0,0,1.0)',
                 interactive: true,
             }
             }
         }
         
-        map.createPane('pane_FinalCaseSimplifiedtestv2_2');
-        map.getPane('pane_FinalCaseSimplifiedtestv2_2').style.zIndex = 402;
-        map.getPane('pane_FinalCaseSimplifiedtestv2_2').style['mix-blend-mode'] = 'normal';
+        map.createPane('pane_Covid19CaseratebyCountyin2023_2');
+        map.getPane('pane_Covid19CaseratebyCountyin2023_2').style.zIndex = 402;
+        map.getPane('pane_Covid19CaseratebyCountyin2023_2').style['mix-blend-mode'] = 'normal';
         
-        var layer_FinalCaseSimplifiedtestv2_2 = new L.geoJson(json_FinalCaseSimplifiedtestv2_2, {
+        var layer_Covid19CaseratebyCountyin2023_2 = new L.geoJson(json_Covid19CaseratebyCountyin2023_2, {
             attribution: '',
             interactive: true,
-            dataVar: 'json_FinalCaseSimplifiedtestv2_2',
-            layerName: 'layer_FinalCaseSimplifiedtestv2_2',
-            pane: 'pane_FinalCaseSimplifiedtestv2_2',
-            onEachFeature: pop_FinalCaseSimplifiedtestv2_2,
-            style: style_FinalCaseSimplifiedtestv2_2_0,
+            dataVar: 'json_Covid19CaseratebyCountyin2023_2',
+            layerName: 'layer_Covid19CaseratebyCountyin2023_2',
+            pane: 'pane_Covid19CaseratebyCountyin2023_2',
+            onEachFeature: pop_Covid19CaseratebyCountyin2023_2,
+            style: style_Covid19CaseratebyCountyin2023_2_0,
         });
-        bounds_group.addLayer(layer_FinalCaseSimplifiedtestv2_2);
+        bounds_group.addLayer(layer_Covid19CaseratebyCountyin2023_2);
+        // Don't add to map initially - controlled by checkbox
 
-        // Layer control functionality - FIXED VERSION
+        // Layer control functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            // Wait for everything to load
+            setTimeout(initializeLayerControls, 1000);
+        });
+
         function initializeLayerControls() {
             console.log("=== INITIALIZING LAYER CONTROLS ===");
             
-            // Track current active layer
-            let activeLayer = null;
-            
-            // Add Poverty layer initially (since its checkbox is checked)
-            map.addLayer(layer_PovertySimplifiedtestv2_0);
-            activeLayer = layer_PovertySimplifiedtestv2_0;
-
-            // Remove popups from all layers except the active one
-            function updateLayerInteractivity() {
-                // Disable popups and interactions for inactive layers
-                layer_PovertySimplifiedtestv2_0.eachLayer(function(layer) {
-                    if (activeLayer !== layer_PovertySimplifiedtestv2_0) {
-                        layer.off('click');
-                        layer.unbindPopup();
-                    } else {
-                        layer.on('click', function(e) {
-                            pop_PovertySimplifiedtestv2_0(e.target.feature, e.target);
-                        });
-                        layer.bindPopup(function(layer) {
-                            return createPopupContent(layer.feature, 'poverty');
-                        });
-                    }
-                });
-
-                layer_VaccinationSimplifiedTestv2_1.eachLayer(function(layer) {
-                    if (activeLayer !== layer_VaccinationSimplifiedTestv2_1) {
-                        layer.off('click');
-                        layer.unbindPopup();
-                    } else {
-                        layer.on('click', function(e) {
-                            pop_VaccinationSimplifiedTestv2_1(e.target.feature, e.target);
-                        });
-                        layer.bindPopup(function(layer) {
-                            return createPopupContent(layer.feature, 'vaccination');
-                        });
-                    }
-                });
-
-                layer_FinalCaseSimplifiedtestv2_2.eachLayer(function(layer) {
-                    if (activeLayer !== layer_FinalCaseSimplifiedtestv2_2) {
-                        layer.off('click');
-                        layer.unbindPopup();
-                    } else {
-                        layer.on('click', function(e) {
-                            pop_FinalCaseSimplifiedtestv2_2(e.target.feature, e.target);
-                        });
-                        layer.bindPopup(function(layer) {
-                            return createPopupContent(layer.feature, 'cases');
-                        });
-                    }
-                });
-            }
+            // Set initial visibility - only Poverty layer visible
+            map.addLayer(layer_PovertyRatebyCountyin2023_0); // Add Poverty layer initially
+            layer_VaccinationRatebyCountyin2023_1.remove(); // Ensure other layers are removed
+            layer_Covid19CaseratebyCountyin2023_2.remove();
 
             // Setup event handlers
             const povertyCheckbox = document.getElementById('checkbox-poverty');
@@ -789,54 +723,30 @@
             povertyCheckbox.addEventListener('change', function(e) {
                 console.log("Poverty checkbox:", e.target.checked);
                 if (e.target.checked) {
-                    map.addLayer(layer_PovertySimplifiedtestv2_0);
-                    activeLayer = layer_PovertySimplifiedtestv2_0;
-                    // Uncheck other boxes
-                    vaccinationCheckbox.checked = false;
-                    casesCheckbox.checked = false;
-                    map.removeLayer(layer_VaccinationSimplifiedTestv2_1);
-                    map.removeLayer(layer_FinalCaseSimplifiedtestv2_2);
-                } else if (activeLayer === layer_PovertySimplifiedtestv2_0) {
-                    map.removeLayer(layer_PovertySimplifiedtestv2_0);
-                    activeLayer = null;
+                    map.addLayer(layer_PovertyRatebyCountyin2023_0);
+                } else {
+                    map.removeLayer(layer_PovertyRatebyCountyin2023_0);
                 }
-                updateLayerInteractivity();
             });
 
             // Vaccination layer control
             vaccinationCheckbox.addEventListener('change', function(e) {
                 console.log("Vaccination checkbox:", e.target.checked);
                 if (e.target.checked) {
-                    map.addLayer(layer_VaccinationSimplifiedTestv2_1);
-                    activeLayer = layer_VaccinationSimplifiedTestv2_1;
-                    // Uncheck other boxes
-                    povertyCheckbox.checked = false;
-                    casesCheckbox.checked = false;
-                    map.removeLayer(layer_PovertySimplifiedtestv2_0);
-                    map.removeLayer(layer_FinalCaseSimplifiedtestv2_2);
-                } else if (activeLayer === layer_VaccinationSimplifiedTestv2_1) {
-                    map.removeLayer(layer_VaccinationSimplifiedTestv2_1);
-                    activeLayer = null;
+                    map.addLayer(layer_VaccinationRatebyCountyin2023_1);
+                } else {
+                    map.removeLayer(layer_VaccinationRatebyCountyin2023_1);
                 }
-                updateLayerInteractivity();
             });
 
-            // Cases layer control - MAKE THIS EXCLUSIVE
+            // Cases layer control
             casesCheckbox.addEventListener('change', function(e) {
                 console.log("Cases checkbox:", e.target.checked);
                 if (e.target.checked) {
-                    map.addLayer(layer_FinalCaseSimplifiedtestv2_2);
-                    activeLayer = layer_FinalCaseSimplifiedtestv2_2;
-                    // Uncheck other boxes
-                    povertyCheckbox.checked = false;
-                    vaccinationCheckbox.checked = false;
-                    map.removeLayer(layer_PovertySimplifiedtestv2_0);
-                    map.removeLayer(layer_VaccinationSimplifiedTestv2_1);
-                } else if (activeLayer === layer_FinalCaseSimplifiedtestv2_2) {
-                    map.removeLayer(layer_FinalCaseSimplifiedtestv2_2);
-                    activeLayer = null;
+                    map.addLayer(layer_Covid19CaseratebyCountyin2023_2);
+                } else {
+                    map.removeLayer(layer_Covid19CaseratebyCountyin2023_2);
                 }
-                updateLayerInteractivity();
             });
 
             // Add click handlers for labels
@@ -849,15 +759,8 @@
                 });
             });
 
-            // Initialize interactivity
-            updateLayerInteractivity();
-            console.log("✅ Layer controls initialized successfully!");
+            console.log("=== LAYER CONTROLS INITIALIZATION COMPLETE ===");
         }
-
-        // Initialize layer controls when page loads
-        document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(initializeLayerControls, 500);
-        });
 
         setBounds();
         </script>
